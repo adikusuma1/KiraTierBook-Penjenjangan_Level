@@ -1,15 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { Search, BookOpen, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Search, BookOpen, AlertCircle, CheckCircle2, Info, Book } from "lucide-react";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 
+// --- TIPE DATA ---
 interface AIAnalysis {
   jenjang: string;
   confidence_score: number;
@@ -23,187 +24,252 @@ interface BookResult {
   authors: string[];
   page_count: number;
   categories: string[];
-  screenshots: string[]; 
-  analysis: AIAnalysis;  
+  thumbnail: string | null;
+  screenshots: string[];
+  analysis: AIAnalysis;
 }
+
+// --- KOMPONEN SIMBOL JENJANG ---
+const LevelSymbol = ({ jenjang, colorCode }: { jenjang: string, colorCode: string }) => {
+  const rawCode = jenjang.split(" ")[1]?.substring(0, 1) || "A"; 
+  const displayCode = jenjang.split(" ")[1] || "A"; 
+
+  const colors: Record<string, string> = {
+    MERAH: "#DC2626",   
+    UNGU: "#9333EA",    
+    BIRU: "#2563EB",    
+    HIJAU: "#16A34A",   
+    KUNING: "#EAB308",  
+  };
+
+  const hex = colors[colorCode?.toUpperCase()] || "#6B7280";
+  const wrapperClass = "relative flex items-center justify-center w-16 h-16 drop-shadow-xl z-20 transition-transform hover:scale-110";
+
+  switch (rawCode) {
+    case "A": 
+      return (
+        <div className={wrapperClass}>
+           <svg viewBox="0 0 24 24" fill={hex} className="w-full h-full stroke-white stroke-[1.5]">
+             <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+           </svg>
+           <span className="absolute text-white font-black text-2xl mt-1 drop-shadow-md">{displayCode}</span>
+        </div>
+      );
+    case "B": 
+    case "C": 
+      return (
+        <div className={wrapperClass}>
+           <div className="w-full h-full rounded-full border-[3px] border-white flex items-center justify-center shadow-md" style={{ backgroundColor: hex }}>
+              <span className="text-white font-black text-2xl drop-shadow-md">{displayCode}</span>
+           </div>
+        </div>
+      );
+    case "D": 
+      return (
+        <div className={wrapperClass}>
+           <svg viewBox="0 0 24 24" fill={hex} className="w-full h-full stroke-white stroke-[1.5] drop-shadow-sm">
+             <path d="M12 2 L22 22 L2 22 Z" strokeLinejoin="round" />
+           </svg>
+           <span className="absolute text-white font-black text-xl mt-3 drop-shadow-md">{displayCode}</span>
+        </div>
+      );
+    case "E": 
+      return (
+        <div className={wrapperClass}>
+           <div className="w-14 h-14 border-[3px] border-white flex items-center justify-center shadow-md transform rotate-0" style={{ backgroundColor: hex }}>
+              <span className="text-white font-black text-2xl drop-shadow-md">{displayCode}</span>
+           </div>
+        </div>
+      );
+    default: return null;
+  }
+};
 
 export default function Home() {
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
-  
   const [result, setResult] = useState<BookResult | null>(null);
   const [error, setError] = useState("");
 
   const handleSearch = async (e?: React.FormEvent) => {
     e?.preventDefault();
     if (!query.trim()) return;
-
     setLoading(true);
     setError("");
     setResult(null);
 
     try {
-
-      const apiUrl = "http://localhost:8000"; 
-      const response = await axios.post(`${apiUrl}/api/analyze`, {
-        title: query,
-      });
-
+      const apiUrl = "http://localhost:8000";
+      const response = await axios.post(`${apiUrl}/api/analyze`, { title: query });
       setResult(response.data);
-      
     } catch (err: any) {
-      console.error(err);
-      setError(
-        err.response?.data?.detail || "Gagal menganalisis buku. Pastikan Backend menyala."
-      );
+      setError(err.response?.data?.detail || "Gagal menganalisis buku.");
     } finally {
       setLoading(false);
     }
   };
 
-  // Helper untuk warna badge berdasarkan respon AI
-  const getBadgeColor = (color: string) => {
-    const map: Record<string, string> = {
-      MERAH: "bg-red-600 hover:bg-red-700",
-      UNGU: "bg-purple-600 hover:bg-purple-700",
-      BIRU: "bg-blue-600 hover:bg-blue-700",
-      HIJAU: "bg-green-600 hover:bg-green-700",
-      KUNING: "bg-yellow-500 hover:bg-yellow-600 text-black",
-    };
-    return map[color?.toUpperCase()] || "bg-gray-500";
-  };
-
   return (
     <div className="min-h-screen bg-slate-50 p-6 md:p-12 font-sans">
-      <div className="mx-auto max-w-5xl">
-        <div className="mb-10 text-center space-y-4">
-          <h1 className="text-5xl font-extrabold text-slate-900 tracking-tight">
-            AI Book <span className="text-blue-600">Classifier</span>
+      <div className="mx-auto max-w-6xl">
+        
+        {/* Header & Search */}
+        <div className="flex flex-col items-center mb-12 space-y-6">
+          {/* JUDUL BARU DI SINI */}
+          <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight text-center">
+            KiraTierBook <span className="text-blue-600">Penjenjangan Level</span>
           </h1>
-          <p className="text-xl text-slate-600">
-            Klasifikasi Jenjang Buku Kemendikbud Menggunakan AI Vision
+          <p className="text-slate-500 text-lg max-w-2xl text-center">
+            Klasifikasi Jenjang Buku Standar Kemdiktisaintek
           </p>
-        </div>
-
-        {/* Search Bar */}
-        <div className="mb-10 flex justify-center">
-          <form onSubmit={handleSearch} className="relative w-full max-w-2xl flex gap-2">
-            <div className="relative flex-1">
-              <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+          
+          <form onSubmit={handleSearch} className="w-full max-w-2xl flex gap-2 relative mt-4">
+            <div className="relative flex-1 group">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5 group-focus-within:text-blue-500 transition-colors" />
               <Input
                 type="text"
-                placeholder="Masukkan judul buku (Contoh: Laskar Pelangi)..."
+                placeholder="Masukkan judul buku (Contoh: Harry Potter)..."
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                className="pl-12 h-14 text-lg rounded-xl shadow-sm"
+                className="pl-12 h-14 text-lg rounded-2xl border-slate-200 shadow-sm focus:ring-2 focus:ring-blue-500/20 transition-all bg-white"
               />
             </div>
-            <Button 
-              type="submit" 
-              disabled={loading} 
-              className="h-14 px-8 text-lg rounded-xl bg-blue-600 hover:bg-blue-700"
-            >
+            <Button type="submit" disabled={loading} className="h-14 px-8 rounded-2xl text-lg font-semibold bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-600/20 transition-all">
               {loading ? "Memproses..." : "Analisis"}
             </Button>
           </form>
         </div>
 
-        {/* Error Alert */}
+        {/* Error */}
         {error && (
-          <Alert className="mb-6 bg-red-50 border-red-200 text-red-700">
-            <AlertCircle className="h-4 w-4" />
+          <Alert className="max-w-2xl mx-auto mb-8 bg-red-50 border-red-100 text-red-700 rounded-2xl">
+            <AlertCircle className="h-5 w-5" />
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
 
         {/* Loading Skeleton */}
         {loading && (
-          <Card className="rounded-3xl border-slate-200 shadow-sm">
-            <CardContent className="p-8 flex gap-8">
-              <Skeleton className="w-1/3 h-64 rounded-xl" />
-              <div className="w-2/3 space-y-4">
-                <Skeleton className="h-8 w-3/4" />
-                <Skeleton className="h-4 w-1/2" />
-                <div className="space-y-2 mt-8">
-                  <Skeleton className="h-4 w-full" />
-                  <Skeleton className="h-4 w-full" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-8">
+            <div className="md:col-span-4">
+               <Skeleton className="w-full aspect-[2/3] rounded-3xl" />
+            </div>
+            <div className="md:col-span-8 space-y-6 pt-4">
+               <Skeleton className="h-12 w-3/4 rounded-xl" />
+               <Skeleton className="h-6 w-1/2 rounded-lg" />
+               <div className="grid grid-cols-2 gap-4 mt-8">
+                 <Skeleton className="h-32 w-full rounded-2xl" />
+                 <Skeleton className="h-32 w-full rounded-2xl" />
+               </div>
+            </div>
+          </div>
         )}
 
-        {/* --- 3. MENAMPILKAN HASIL (RESULT) --- */}
+        {/* RESULT CARD */}
         {!loading && result && (
-          <Card className="rounded-3xl border-slate-200 shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-300">
-            <div className="flex flex-col md:flex-row">
+          <div className="max-w-5xl mx-auto bg-white rounded-[2.5rem] shadow-2xl border border-slate-100 overflow-hidden animate-in fade-in slide-in-from-bottom-8 duration-500">
+            <div className="grid grid-cols-1 md:grid-cols-12">
               
-              {/* Kolom Kiri: Bukti Screenshot */}
-              <div className="w-full md:w-1/3 bg-slate-100 p-6 border-r border-slate-200 flex items-center justify-center">
-                {result.screenshots && result.screenshots.length > 0 ? (
-                  <div className="relative rounded-lg overflow-hidden shadow-md border border-slate-300">
-                    <img 
-                      src={`data:image/png;base64,${result.screenshots[0]}`} 
-                      alt="Preview Buku" 
-                      className="w-full h-auto object-contain"
-                    />
-                    <div className="absolute bottom-0 w-full bg-black/60 text-white text-xs text-center py-1">
-                      AI Vision Evidence
-                    </div>
+              {/* KOLOM KIRI: VISUAL */}
+              <div className="md:col-span-4 bg-slate-100 p-8 flex flex-col items-center justify-center relative overflow-hidden min-h-[400px]">
+                <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#64748b_1px,transparent_1px)] [background-size:20px_20px]"></div>
+                
+                <div className="relative z-10 group">
+                  <div className="absolute -inset-1 bg-black/20 blur-xl rounded-[14px] group-hover:blur-2xl transition-all duration-500"></div>
+                  <div className="relative rounded-[14px] overflow-hidden border-4 border-white shadow-2xl transition-transform duration-500 group-hover:-translate-y-2 w-[220px]">
+                    {result.thumbnail ? (
+                      <img 
+                        src={result.thumbnail} 
+                        alt={result.title} 
+                        className="w-full h-auto object-cover"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                          e.currentTarget.parentElement?.classList.add('bg-slate-200');
+                          e.currentTarget.parentElement?.classList.remove('border-white');
+                        }}
+                      />
+                    ) : (
+                      <div className="w-full aspect-[2/3] bg-slate-200 flex flex-col items-center justify-center text-slate-400">
+                        <Book className="w-16 h-16 mb-2 opacity-50" />
+                        <span className="font-medium">No Cover</span>
+                      </div>
+                    )}
                   </div>
-                ) : (
-                  <div className="text-slate-400 text-sm">No Preview Available</div>
-                )}
+                  <div className="absolute -top-3 -right-3 z-30 filter drop-shadow-lg">
+                    <LevelSymbol 
+                      jenjang={result.analysis.jenjang} 
+                      colorCode={result.analysis.badge_color} 
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-8 flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                  <CheckCircle2 className="w-4 h-4 text-green-500" />
+                  AI Verified Content
+                </div>
               </div>
 
-              {/* Kolom Kanan: Analisis */}
-              <div className="w-full md:w-2/3 p-8 space-y-6">
-                <div>
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h2 className="text-3xl font-bold text-slate-900">{result.title}</h2>
-                      <p className="text-slate-500 text-lg mt-1">
-                        {result.authors?.join(", ")} • {result.page_count || "?"} Halaman
-                      </p>
+              {/* KOLOM KANAN: DATA TEKS */}
+              <div className="md:col-span-8 p-8 md:p-12 flex flex-col">
+                <div className="mb-8">
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {result.categories?.map((cat, i) => (
+                      <span key={i} className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-bold uppercase tracking-wide">
+                        {cat}
+                      </span>
+                    ))}
+                  </div>
+                  <h2 className="text-3xl md:text-4xl font-black text-slate-900 leading-tight mb-2">{result.title}</h2>
+                  <p className="text-lg text-slate-500 font-medium">
+                    Oleh <span className="text-slate-800">{result.authors?.join(", ")}</span> • {result.page_count} Halaman
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 mb-8">
+                  <div className="bg-blue-50/50 p-6 rounded-3xl border border-blue-100 hover:border-blue-200 transition-colors group">
+                    <div className="flex gap-4">
+                      <div className="bg-blue-600 w-10 h-10 rounded-xl flex items-center justify-center shrink-0 text-white shadow-lg shadow-blue-600/20 group-hover:scale-110 transition-transform">
+                        <Info className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-slate-900 text-lg">Analisis Teknis</h3>
+                        <p className="text-slate-600 leading-relaxed mt-2 text-sm">
+                          {result.analysis.alasan}
+                        </p>
+                      </div>
                     </div>
-                    {/* Badge Jenjang */}
-                    <Badge className={`px-4 py-2 text-md font-bold rounded-lg ${getBadgeColor(result.analysis.badge_color)}`}>
-                      {result.analysis.jenjang}
+                  </div>
+
+                  <div className="bg-green-50/50 p-6 rounded-3xl border border-green-100 hover:border-green-200 transition-colors group">
+                    <div className="flex gap-4">
+                      <div className="bg-green-600 w-10 h-10 rounded-xl flex items-center justify-center shrink-0 text-white shadow-lg shadow-green-600/20 group-hover:scale-110 transition-transform">
+                        <BookOpen className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-slate-900 text-lg">Saran Pendampingan</h3>
+                        <p className="text-slate-600 leading-relaxed mt-2 text-sm">
+                          {result.analysis.saran}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-auto flex justify-between items-center pt-6 border-t border-slate-100">
+                  <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                    Berdasarkan SK 030/P/2022
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Confidence</span>
+                    <Badge variant="secondary" className="bg-slate-900 text-white px-3 py-1 rounded-lg">
+                      {result.analysis.confidence_score}%
                     </Badge>
                   </div>
                 </div>
-
-                <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 space-y-4">
-                  <div className="flex gap-3">
-                    <CheckCircle2 className="h-6 w-6 text-blue-600 flex-shrink-0" />
-                    <div>
-                      <h3 className="font-semibold text-slate-900">Alasan Klasifikasi</h3>
-                      <p className="text-slate-700 leading-relaxed mt-1">
-                        {result.analysis.alasan}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-3">
-                    <BookOpen className="h-6 w-6 text-green-600 flex-shrink-0" />
-                    <div>
-                      <h3 className="font-semibold text-slate-900">Saran Pendampingan</h3>
-                      <p className="text-slate-700 leading-relaxed mt-1">
-                        {result.analysis.saran}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="text-right text-sm text-slate-400 font-medium">
-                  AI Confidence Score: {result.analysis.confidence_score}%
-                </div>
               </div>
-
             </div>
-          </Card>
+          </div>
         )}
-
       </div>
     </div>
   );
