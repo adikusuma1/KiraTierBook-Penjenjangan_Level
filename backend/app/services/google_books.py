@@ -65,5 +65,5 @@ def search_book_metadata(query: str) -> Optional[Dict]:
             'thumbnail': thumbnail 
         }
     except Exception as e:
-        print(f"❌ Error Google Books: {e}")
+        print(f"Error Google Books: {e}")
         return None

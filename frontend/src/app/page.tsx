@@ -90,6 +90,8 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<BookResult | null>(null);
   const [error, setError] = useState("");
+  // State tambahan untuk menangani gambar error
+  const [imgError, setImgError] = useState(false);
 
   const handleSearch = async (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -97,9 +99,10 @@ export default function Home() {
     setLoading(true);
     setError("");
     setResult(null);
+    setImgError(false); // Reset status error gambar setiap search baru
 
     try {
-      const apiUrl = "http://localhost:8000";
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
       const response = await axios.post(`${apiUrl}/api/analyze`, { title: query });
       setResult(response.data);
     } catch (err: any) {
@@ -115,7 +118,6 @@ export default function Home() {
         
         {/* Header & Search */}
         <div className="flex flex-col items-center mb-12 space-y-6">
-          {/* JUDUL BARU DI SINI */}
           <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight text-center">
             KiraTierBook <span className="text-blue-600">Penjenjangan Level</span>
           </h1>
@@ -170,31 +172,39 @@ export default function Home() {
           <div className="max-w-5xl mx-auto bg-white rounded-[2.5rem] shadow-2xl border border-slate-100 overflow-hidden animate-in fade-in slide-in-from-bottom-8 duration-500">
             <div className="grid grid-cols-1 md:grid-cols-12">
               
-              {/* KOLOM KIRI: VISUAL */}
+              {/* --- KOLOM KIRI: VISUAL --- */}
               <div className="md:col-span-4 bg-slate-100 p-8 flex flex-col items-center justify-center relative overflow-hidden min-h-[400px]">
                 <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#64748b_1px,transparent_1px)] [background-size:20px_20px]"></div>
                 
                 <div className="relative z-10 group">
                   <div className="absolute -inset-1 bg-black/20 blur-xl rounded-[14px] group-hover:blur-2xl transition-all duration-500"></div>
-                  <div className="relative rounded-[14px] overflow-hidden border-4 border-white shadow-2xl transition-transform duration-500 group-hover:-translate-y-2 w-[220px]">
-                    {result.thumbnail ? (
+                  
+                  <div className="relative rounded-[14px] overflow-hidden border-4 border-white shadow-2xl transition-transform duration-500 group-hover:-translate-y-2 w-[220px] bg-white">
+                    {/* LOGIKA TAMPILAN GAMBAR: */}
+                    {/* 1. Jika ada thumbnail dan belum error -> Tampilkan Cover Asli */}
+                    {result.thumbnail && !imgError ? (
                       <img 
                         src={result.thumbnail} 
                         alt={result.title} 
-                        className="w-full h-auto object-cover"
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none';
-                          e.currentTarget.parentElement?.classList.add('bg-slate-200');
-                          e.currentTarget.parentElement?.classList.remove('border-white');
-                        }}
+                        className="w-full h-auto object-cover min-h-[300px]"
+                        onError={() => setImgError(true)} // Jika gagal load, trigger error
                       />
                     ) : (
-                      <div className="w-full aspect-[2/3] bg-slate-200 flex flex-col items-center justify-center text-slate-400">
-                        <Book className="w-16 h-16 mb-2 opacity-50" />
-                        <span className="font-medium">No Cover</span>
+                      // 2. Jika tidak ada cover / error -> Tampilkan Karakter Lucu (Fallback)
+                      <div className="w-full aspect-[2/3] bg-slate-50 flex flex-col items-center justify-center text-center p-4 relative overflow-hidden">
+                        {/* Pastikan file no-cover.png ada di folder /public frontend */}
+                        <img 
+                          src="/no-cover.png" 
+                          alt="Character" 
+                          className="w-32 h-32 object-contain mb-2 drop-shadow-md animate-in bounce-in duration-700"
+                        />
+                        <span className="font-bold text-slate-400 text-sm uppercase tracking-widest mt-2">
+                          Cover Not<br/>Available
+                        </span>
                       </div>
                     )}
                   </div>
+
                   <div className="absolute -top-3 -right-3 z-30 filter drop-shadow-lg">
                     <LevelSymbol 
                       jenjang={result.analysis.jenjang} 
@@ -209,7 +219,7 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* KOLOM KANAN: DATA TEKS */}
+              {/* --- KOLOM KANAN: DATA TEKS --- */}
               <div className="md:col-span-8 p-8 md:p-12 flex flex-col">
                 <div className="mb-8">
                   <div className="flex flex-wrap gap-2 mb-3">
@@ -233,7 +243,7 @@ export default function Home() {
                       </div>
                       <div>
                         <h3 className="font-bold text-slate-900 text-lg">Analisis Teknis</h3>
-                        <p className="text-slate-600 leading-relaxed mt-2 text-sm">
+                        <p className="text-slate-600 leading-relaxed mt-2 text-sm whitespace-pre-line">
                           {result.analysis.alasan}
                         </p>
                       </div>
