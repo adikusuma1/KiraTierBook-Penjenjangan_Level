@@ -8,7 +8,7 @@
 KiraTierBook Readable Level adalah aplikasi berbasis web yang menggunakan Kecerdasan Buatan (AI) untuk mengklasifikasikan jenjang buku secara otomatis berdasarkan standar Kemendikbudristek (SK 030/P/2022). Aplikasi ini dirancang untuk membantu guru, pustakawan, dan orang tua dalam menentukan kesesuaian buku bacaan bagi anak-anak dan siswa, mulai dari Pembaca Dini (Jenjang A) hingga Pembaca Mahir (Jenjang E).
 
 <!-- (Opsional: Tambahkan screenshot aplikasi di sini nanti, simpan gambar di folder frontend/public dan ganti path di bawah) -->
-![Aplikasi Screenshot](KiraTierBook-Penjenjangan_Level\img\image.png) <!-- Placeholder untuk screenshot -->
+![Aplikasi Screenshot](KiraTierBook-Penjenjangan_Level/img/image.png) <!-- Placeholder untuk screenshot -->
 
 ## ✨ Fitur Utama
 
