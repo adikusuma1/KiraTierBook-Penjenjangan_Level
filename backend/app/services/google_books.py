@@ -24,7 +24,7 @@ def search_book_metadata(query: str) -> Optional[Dict]:
         api_key = os.getenv("GOOGLE_BOOKS_API_KEY")
         
         if not api_key:
-            print("❌ FATAL ERROR: GOOGLE_BOOKS_API_KEY tidak ditemukan/kosong di .env!")
+            print("FATAL ERROR: GOOGLE_BOOKS_API_KEY tidak ditemukan/kosong di .env!")
             return None
 
         url = f"https://www.googleapis.com/books/v1/volumes?q={query}&key={api_key}"
